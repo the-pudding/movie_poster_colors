@@ -1,0 +1,4 @@
+"0","colorsMeta <- allColors %>% "
+"0","  mutate(id = gsub(""\\_.+"", """", fileName)) %>% "
+"0","  left_join(meta, by = c(""id"" = ""ID."")) %>% "
+"0","  mutate(decade = Year - (Year %% 10))"

@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1547677386019.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1916646269",
+    "id" : "BF6A67D8",
+    "lastKnownWriteTime" : 1547681628,
+    "last_content_update" : 1547681628540,
+    "path" : "~/Documents/dataScience/pudding/poster_colors/analysis/test_analysis.Rmd",
+    "project_path" : "analysis/test_analysis.Rmd",
+    "properties" : {
+        "cursorPosition" : "183,21",
+        "last_setup_crc32" : "8DD64B7Abb338d19",
+        "scrollLine" : "170"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

@@ -1,0 +1,16 @@
+"0","image_path <- here::here(""test_images"", ""7170950_1257228.jpg"")"
+"0","colours_vector <- create_palette(image_path = image_path,"
+"0","number_of_colors =1,"
+"0","type_of_variable = ""categorical"")"
+"2","decomposing image into RGB...
+"
+"2","applying kmeans to the image...
+"
+"2","optimising palette...
+"
+"2","Joining, by = ""id""
+"
+"2","Joining, by = ""id""
+"
+"2","optimising level of divergence between colours
+"

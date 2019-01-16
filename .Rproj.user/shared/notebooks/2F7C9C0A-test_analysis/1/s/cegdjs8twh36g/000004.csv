@@ -1,0 +1,6 @@
+"0","colorsMeta <- allColors %>% "
+"0","  mutate(id = gsub(""\\_.+"", """", fileName)) %>% "
+"0","  left_join(meta, by = c(""id"" = ""ID."")) %>% "
+"0","  mutate(decade = Year - (Year %% 10)) %>% "
+"0","  left_join(imdb, by = c(""IMDBid"" = ""tconst""))"
+"0","write.csv(colorsMeta, here::here(""analysis"", ""processed_data"", ""colorsMeta.csv""), row.names = FALSE)"

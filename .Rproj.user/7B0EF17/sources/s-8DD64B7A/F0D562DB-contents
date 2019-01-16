@@ -1,0 +1,240 @@
+---
+title: "testing"
+author: "Amber Thomas"
+date: "1/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Intro 
+
+Ultimately, I am trying to extract the most prominent color(s) from several movie posters. In this file, I'll include several attempts to solve this problem. 
+
+## Packages
+```{r message = FALSE}
+library(tidyverse)
+library(here)
+library(paletter)
+library(RImagePalette)
+library(RColorBrewer)
+library(plotly)
+```
+
+
+## Importing a few test movie posters
+
+Testing the `palleter` package: 
+
+```{r}
+image_path <- here::here("test_images", "7170950_1257228.jpg")
+colours_vector <- create_palette(image_path = image_path,
+number_of_colors =1,
+type_of_variable = "categorical")
+```
+
+Seems mostly to have worked but left out some of the lighter colors. 
+
+Let's try `RImagePalette`
+
+```{r}
+imgMatrix <- readJPEG(image_path)
+pal <- image_palette(imgMatrix, n = 3)
+```
+
+
+## Making a function
+
+Alright, so based on speed, right now I'm going to use the function from `RImagePalette`. I'm going to loop through each poster twice, originally picking out the top 1 color only, then doing it again, to pick out the top 3. 
+
+```{r}
+findColors <- function(fileName, .pb = NULL){
+  if ((!is.null(.pb)) && inherits(.pb, "Progress") && (.pb$i < .pb$n)) .pb$tick()$print()
+  Sys.sleep(0.001)
+  		
+  img_path <- here::here("high-res", "pudding", fileName)
+  imgMatrix <- readJPEG(img_path)
+  imgPalette1 <- image_palette(imgMatrix, n = 1)
+  imgPalette2 <- image_palette(imgMatrix, n = 3)
+  df <- as.data.frame(fileName) %>% 
+    cbind(imgPalette1, imgPalette2) %>% 
+    group_by(fileName) %>% 
+    mutate(imgPalette2 = paste0(imgPalette2, collapse = ",")) %>% 
+    distinct(fileName, .keep_all = TRUE)
+  
+  filePath <- here::here("processed_data", "colors.csv")
+
+  write.table(df, file = filePath, row.names = FALSE, append = TRUE, sep = ",", col.names = !file.exists(filePath))
+}
+
+
+```
+
+To get our list of file names, we can read in a data file: 
+```{r}
+cine <- read.csv(here::here("raw_data", "image-cine-linkup.csv"), header = TRUE, stringsAsFactors = FALSE)
+
+pb <- progress_estimated(length(cine$Image.link))
+
+possiblyFindColors <- possibly(.f = findColors, otherwise = NA_character_, quiet = TRUE)
+```
+
+```{r eval = FALSE}
+colors <- map_dfr(cine$Image.link, possiblyFindColors, .pb = pb)
+```
+
+```{r echo = FALSE}
+colors <- read.csv(here::here("processed_data", "colors.csv"), header = TRUE, stringsAsFactors = FALSE)
+```
+
+Alright, so it looks like we were successfully able to grab colors from 6274 (98%) of the posters. Now to take a look at what we found. 
+
+We'll start by just working with the single color results (`imgPalette1`). 
+
+## Exploring Colors
+
+Let's take a quick look at the colors themselves with no other context. 
+
+First we have to convert hex colors to rgb. 
+
+```{r}
+colorsRGB <- colors %>% 
+  mutate(rgb = plotly::toRGB(imgPalette1)) %>% 
+  separate(rgb, into = c("prefix", "r", "g", "b", "alpha"), sep = "\\(|,|\\)") %>% 
+  mutate(rgb = paste(r, g, b, sep = ",")) %>% 
+  mutate(r = as.numeric(r),
+         g = as.numeric(g),
+         b = as.numeric(b))
+```
+
+Then convert RGB to HSV
+
+```{r}
+rgbOnly <- colorsRGB %>% 
+  select(c(r, g, b))
+```
+
+```{r}
+colorsHSV <- t(rgb2hsv(t(rgbOnly))) %>% as.data.frame()
+
+allColors <- colorsRGB %>% 
+  cbind(colorsHSV)
+```
+
+Let's also add in some movie metadata
+
+
+```{r}
+meta <- read.csv(here::here("raw_data", "metadata.csv"), stringsAsFactors = FALSE, header = TRUE)
+
+imdb <- read_tsv(here::here("raw_data", "imdb.tsv"))
+```
+
+
+```{r}
+colorsMeta <- allColors %>% 
+  mutate(id = gsub("\\_.+", "", fileName)) %>% 
+  left_join(meta, by = c("id" = "ID.")) %>% 
+  mutate(decade = Year - (Year %% 10)) %>% 
+  left_join(imdb, by = c("IMDBid" = "tconst"))
+
+write.csv(colorsMeta, here::here("processed_data", "colorsMeta.csv"), row.names = FALSE)
+```
+
+Great, now let's see if we can get a color spread by decade. 
+
+```{r}
+
+sub <- colorsMeta %>% filter(decade == 2000)
+pal <- sub$imgPalette1
+names(pal) <- pal
+
+my_theme <- function(base_size = 12, base_family = "Helvetica"){
+    theme(axis.title.y = element_blank(),axis.title.x = element_blank(),
+    plot.title = element_text(face="bold", size=16),
+    axis.text = element_text(face="bold"),
+    plot.background = element_rect(fill = 'snow2',color='white'),
+    strip.text.y = element_text(angle=180),
+    legend.position = 'None', legend.title = element_blank())
+}
+
+sub %>% 
+  ggplot(aes( x = reorder(imgPalette1, h), y = 1, fill = imgPalette1)) + 
+  geom_point(shape = 21, size = 4, alpha = 0.8, stroke = 0) + 
+  scale_fill_manual(values = pal) +
+  theme_void() + 
+  facet_grid(Year ~.) +
+  my_theme() + theme(axis.text.y=element_blank(),
+                   axis.text.x=element_blank()) 
+```
+
+How about by genre? 
+
+```{r}
+genre <- colorsMeta %>% 
+  separate_rows(genres, sep = ",") %>% 
+  mutate(genres = trimws(tolower(genres)))
+
+```
+
+Action movies
+
+```{r}
+action <- genre %>% 
+  filter(genres == "action")
+
+pal <- action$imgPalette1
+names(pal) <- pal
+
+actionYr <- action %>% 
+  group_by(imgPalette1, h, Year) %>% 
+  summarise(total = n())
+
+actionYr %>% ggplot(aes(x = Year, y = 1, fill = reorder(imgPalette1, h))) +
+  geom_col(color = "white", size = 0.01) + 
+  scale_fill_manual(values = pal) + 
+  theme_void() + 
+  my_theme()
+```
+
+Comedy
+
+```{r}
+comedy <- genre %>% 
+  filter(genres == "comedy")
+
+pal <- comedy$imgPalette1
+names(pal) <- pal
+
+comedyYr <- comedy %>% 
+  group_by(imgPalette1, h, Year) %>% 
+  summarise(total = n())
+
+comedyYr %>% ggplot(aes(x = Year, y = 1, fill = reorder(imgPalette1, h))) +
+  geom_col(color = "white", size = 0.01) + 
+  scale_fill_manual(values = pal) + 
+  theme_void() + 
+  my_theme()
+```
+
+Drama
+
+```{r}
+drama <- genre %>% 
+  filter(genres == "drama")
+
+pal <- drama$imgPalette1
+names(pal) <- pal
+
+dramaYr <- drama %>% 
+  group_by(imgPalette1, h, Year) %>% 
+  summarise(total = n())
+
+dramaYr %>% ggplot(aes(x = Year, y = 1, fill = reorder(imgPalette1, h))) +
+  geom_col(color = "white", size = 0.01) + 
+  scale_fill_manual(values = pal) + 
+  theme_void() + 
+  my_theme()
+```

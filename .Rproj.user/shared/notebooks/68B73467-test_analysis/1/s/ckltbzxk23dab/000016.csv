@@ -1,0 +1,3 @@
+"0","colorsHSV <- t(rgb2hsv(t(rgbOnly))) %>% as.data.frame()"
+"0","allColors <- colorsRGB %>% "
+"0","  cbind(colorsHSV)"

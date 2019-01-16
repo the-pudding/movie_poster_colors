@@ -1,0 +1,2 @@
+"0","rgbOnly <- colorsRGB %>% "
+"0","  select(c(r, g, b))"

@@ -1,0 +1,2 @@
+"0","imgMatrix <- readJPEG(image_path)"
+"0","pal <- image_palette(imgMatrix, n = 3)"

@@ -8,3 +8,4 @@ dist
 package-lock.json
 analysis/high-res/
 analysis/test_images/
+analysis/raw_data/imdb.tsv

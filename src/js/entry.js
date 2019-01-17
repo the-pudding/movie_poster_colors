@@ -1,7 +1,8 @@
 /* global d3 */
 import debounce from 'lodash.debounce';
 import isMobile from './utils/is-mobile';
-import circles from './circles';
+// import circles from './circles';
+import histogram from './histogram'
 
 const $body = d3.select('body');
 let previousWidth = 0;
@@ -12,7 +13,7 @@ function resize() {
 	const width = $body.node().offsetWidth;
 	if (previousWidth !== width) {
 		previousWidth = width;
-		graphic.resize();
+		//graphic.resize();
 	}
 }
 
@@ -37,7 +38,8 @@ function init() {
 	// setup sticky header menu
 	setupStickyHeader();
 	// kick off graphic code
-	circles.init();
+	//circles.init();
+	histogram.init()
 }
 
 init();

@@ -21,6 +21,7 @@ library(paletter)
 library(RImagePalette)
 library(RColorBrewer)
 library(plotly)
+library(imager)
 ```
 
 
@@ -188,4 +189,21 @@ write.csv(genre, here::here("src", "assets", "data", "genreColors.csv"), row.nam
 
 ggplot(genre, aes(x = Year)) + geom_histogram()
 ```
+
+```{r}
+last <- colorsMeta %>% 
+  filter(Year == 2018)
+```
+
+```{r}
+resizeImages <- function(file){
+  image <- load.image(here::here("analysis", "high-res", "pudding", file))
+  resized <- imresize(image, scale = 0.1)
+  
+  save.image(resized, file = here::here("analysis", "low-res", file))
+}
+
+map(last$fileName, resizeImages)
+```
+
 

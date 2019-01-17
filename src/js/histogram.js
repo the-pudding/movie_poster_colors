@@ -2,17 +2,37 @@
 let data = []
 let nestedData = []
 
+var diff = require('color-diff');
+
 // selection
 let $container = d3.selectAll('.container__histogram')
 
 
 function setupChart(){
+
+  var color_buckets = d3.range(0,1,.001);
+  color_buckets = color_buckets.map(function(d){
+    var rgb = d3.rgb(d3.interpolateSpectral(d));
+    return {R:rgb.r, B:rgb.b, G:rgb.g};
+  })
+
   nestedData = d3.nest()
-    .key(d => +d.hueGroup)
-    .sortKeys(d3.ascending)
+    .key(function(d){
+      var color = d3.color("rgb("+d.rgb+")");
+      var rgb = d3.rgb(color)
+      var closest = diff.closest({R:rgb.r, B:rgb.b, G:rgb.g}, color_buckets);
+
+      var color = "rgb("+closest.R+","+closest.G+","+closest.B+")";
+      return color;
+    })
+    .sortKeys(function(a,b){
+      var a_color = d3.hsl(a);
+      var b_color = d3.hsl(b);
+      return a_color.h - b_color.h;
+    })
     .entries(data)
 
-  console.log({nestedData})
+  console.log(nestedData)
 
   const $groups = $container
     .selectAll('.group')
@@ -27,10 +47,13 @@ function setupChart(){
     .enter()
     .append('div')
     .attr('class', 'poster')
-    .style('background-color', d => d.imgPalette1)
-    // .style('background-image', d => {
-    //   const path = `url('assets/low-res/${d.fileName}')`
-    //   return path})
+    .style('background-color', function(d){
+      return d3.rgb(d3.color("rgb("+d.rgb+")"));
+    })
+    .style('background-image', d => {
+      const path = `url('assets/low-res/${d.fileName}')`
+      return path
+    })
 }
 
 function setup(){
